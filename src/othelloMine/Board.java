@@ -8,11 +8,6 @@ public class Board implements Comparable {
 			{ ".", ".", ".", "O", "X", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." },
 			{ ".", ".", ".", ".", ".", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." } }; // = new
 																										// String[4][4];
-
-	public void setValue(int value) {
-		this.value = value;
-	}
-
 	private String lastActivePlayer = "";
 	private String position = "";
 	private int level = 0;
@@ -24,42 +19,9 @@ public class Board implements Comparable {
 	private Board parent;
 	private boolean isVisited = false;
 	private LinkedList<Board> children; // this is null on this object creation
-	private int alpha = Integer.MIN_VALUE;
-	private int beta =Integer.MAX_VALUE;
-	
-	
-	
-	public boolean isVisited() {
-		return isVisited;
-	}
 
-	public void setVisited(boolean isVisited) {
-		this.isVisited = isVisited;
-	}
-
-	public Board getParent() {
-		return parent;
-	}
-
-	public void setParent(Board parent) {
-		this.parent = parent;
-	}
-
-	public Board getChilde(int i) {
-		return children.get(i);
-	}
-
-	public LinkedList<Board> getChilderen() {
-		return children; 
-	}
-
-	public void addChilde(Board childe) {
-		if (children == null) {
-			children = new LinkedList<Board>();
-		} else {
-			this.children.add(childe);
-
-		}
+	public void setValue(int value) {
+		this.value = value;
 	}
 
 	public Board() {
@@ -70,26 +32,15 @@ public class Board implements Comparable {
 		this.board = b;
 	}
 
-	public Board(String[][] board, String lastActivePlayer, String position, int boardLevel, int value,
-			int alpha, int beta, LinkedList<String> moveHist) {
+	public Board(String[][] board, String lastActivePlayer, String position, int boardLevel, int value,  LinkedList<String> moveHist) {
 		this.board = board;
 		this.lastActivePlayer = lastActivePlayer;
 		this.position = position;
 		this.level = boardLevel;
 		this.value = value;
 		this.movehistory = moveHist;
-		this.alpha=alpha;
-		this.beta=beta;
-		
 	}
 
-	public int getAlpha() {
-		return alpha;
-	}
-
-	public int getBeta() {
-		return beta;
-	}
 
 	/**
 	 * puts a piece on the board if possible otherwise returns false
@@ -631,8 +582,7 @@ public class Board implements Comparable {
 	}
 
 	public Board cloneThisBoardObj() {
-		return new Board(this.getBoardCopy(), this.lastActivePlayer, this.position, this.level, this.value,
-				this.alpha,this.beta, this.getMoveHistoryCopy());
+		return new Board(this.getBoardCopy(), this.lastActivePlayer, this.position, this.level, this.value,  this.getMoveHistoryCopy());
 	}
 
 	public LinkedList<String> getMovehistory() {
@@ -645,14 +595,6 @@ public class Board implements Comparable {
 			temp += this.movehistory.get(i) + ";";
 		}
 		return temp;
-	}
-
-	public void setAlpha(int alpha) {
-		this.alpha = alpha;
-	}
-
-	public void setBeta(int beta) {
-		this.beta = beta;
 	}
 
 	public String toString() {
