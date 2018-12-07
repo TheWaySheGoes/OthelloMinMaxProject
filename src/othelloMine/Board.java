@@ -3,56 +3,92 @@ package othelloMine;
 import java.util.LinkedList;
 
 public class Board implements Comparable {
-	private String[][] board	  ={{".",".",".",".",".",".",".","."},
-									{".",".",".",".",".",".",".","."},
-									{".",".",".",".",".",".",".","."},
-									{".",".",".","X","O",".",".","."},
-									{".",".",".","O","X",".",".","."},
-									{".",".",".",".",".",".",".","."},
-									{".",".",".",".",".",".",".","."},
-									{".",".",".",".",".",".",".","."}};	// = new String[4][4];
-									
-		
+	private String[][] board = { { ".", ".", ".", ".", ".", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." },
+			{ ".", ".", ".", ".", ".", ".", ".", "." }, { ".", ".", ".", "X", "O", ".", ".", "." },
+			{ ".", ".", ".", "O", "X", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." },
+			{ ".", ".", ".", ".", ".", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." } }; // = new
+																										// String[4][4];
+
 	public void setValue(int value) {
 		this.value = value;
 	}
 
-	private String player = "";
+	private String lastActivePlayer = "";
 	private String position = "";
 	private int level = 0;
-	private int nbrOfTakenX = 0;
-	private int nbrOfTakenO = 0;
+	private int numberOfX = 0;
+	private int numberOfO = 0;
 	private int value = 0;
 	private int boardLength = board.length;
 	private LinkedList<String> movehistory = new LinkedList<String>();
+	private Board parent;
+	private boolean isVisited = false;
+	private LinkedList<Board> children; // this is null on this object creation
+	private int alpha = Integer.MIN_VALUE;
+	private int beta =Integer.MAX_VALUE;
+	
+	
+	
+	public boolean isVisited() {
+		return isVisited;
+	}
+
+	public void setVisited(boolean isVisited) {
+		this.isVisited = isVisited;
+	}
+
+	public Board getParent() {
+		return parent;
+	}
+
+	public void setParent(Board parent) {
+		this.parent = parent;
+	}
+
+	public Board getChilde(int i) {
+		return children.get(i);
+	}
+
+	public LinkedList<Board> getChilderen() {
+		return children; 
+	}
+
+	public void addChilde(Board childe) {
+		if (children == null) {
+			children = new LinkedList<Board>();
+		} else {
+			this.children.add(childe);
+
+		}
+	}
 
 	public Board() {
-//		for (int i = 0; i < board.length; i++) {
-//			for (int j = 0; j < board.length; j++) {
-//				board[i][j] = ".";
-//			}
-//		}
+
 	}
 
 	public Board(String[][] b) {
 		this.board = b;
 	}
 
-	public Board(String[][] board,String player, String position, int boardLevel,int value, LinkedList<String> moveHist) {
+	public Board(String[][] board, String lastActivePlayer, String position, int boardLevel, int value,
+			int alpha, int beta, LinkedList<String> moveHist) {
 		this.board = board;
-		this.player = player;
+		this.lastActivePlayer = lastActivePlayer;
 		this.position = position;
 		this.level = boardLevel;
-		this.value=value;
+		this.value = value;
 		this.movehistory = moveHist;
+		this.alpha=alpha;
+		this.beta=beta;
+		
 	}
 
-	public int getNbrOfTakenX() {
-		return nbrOfTakenX;
+	public int getAlpha() {
+		return alpha;
 	}
 
-	public int getNbrOfTakenO() {
-		return nbrOfTakenO;
+	public int getBeta() {
+		return beta;
 	}
 
 	/**
@@ -66,9 +102,10 @@ public class Board implements Comparable {
 	 */
 	public boolean insertValue(int row, int col, String player) {
 		try {
-			if ((player.equals("X") || player.equals("O")) && board[row][col].equals(".")&&this.isValidMove(row, col, player)) {
+			if ((player.equals("X") || player.equals("O")) && board[row][col].equals(".")
+					&& this.isValidMove(row, col, player)) {
 				board[row][col] = player;
-				this.player = player;
+				this.lastActivePlayer = player;
 				level++;
 				movehistory.add(row + "," + col);
 				this.flipLeft(row, col, player, row, col);
@@ -77,11 +114,12 @@ public class Board implements Comparable {
 				this.flipDown(row, col, player, row, col);
 				this.flipUpLeft(row, col, player, row, col);
 				this.flipUpRight(row, col, player, row, col);
-				
+				this.flipDownLeft(row, col, player, row, col);
+				this.flipDownRight(row, col, player, row, col);
 				this.sumUpBoard();
-	//			System.out.println(this.toString());
+				// System.out.println(this.toString());
 				return true;
-			
+
 			}
 		} catch (Exception e) {
 			return false;
@@ -89,7 +127,35 @@ public class Board implements Comparable {
 		return false;
 	}
 
-	private void sumUpBoard() {
+	// *** thisOneIsForalternativeSolution*** (no sumUp() )
+	public boolean makeBoard(int row, int col, String player) {
+		try {
+			if ((player.equals("X") || player.equals("O")) && board[row][col].equals(".")
+					&& this.isValidMove(row, col, player)) {
+				board[row][col] = player;
+				this.lastActivePlayer = player;
+				level++;
+				movehistory.add(row + "," + col);
+				this.flipLeft(row, col, player, row, col);
+				this.flipRight(row, col, player, row, col);
+				this.flipUp(row, col, player, row, col);
+				this.flipDown(row, col, player, row, col);
+				this.flipUpLeft(row, col, player, row, col);
+				this.flipUpRight(row, col, player, row, col);
+				this.flipDownLeft(row, col, player, row, col);
+				this.flipDownRight(row, col, player, row, col);
+				// ****
+				// System.out.println(this.toString());
+				return true;
+
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return false;
+	}
+
+	public void sumUpBoard() {
 		int tempX = 0;
 		int tempO = 0;
 
@@ -103,11 +169,11 @@ public class Board implements Comparable {
 				}
 			}
 		}
-		this.nbrOfTakenO = tempO;
-		this.nbrOfTakenX = tempX;
-		this.value = this.nbrOfTakenX - this.nbrOfTakenO;
+		this.numberOfO = tempO;
+		this.numberOfX = tempX;
+		this.value = this.numberOfX - this.numberOfO;
 	}
-	
+
 	/**
 	 * 
 	 * @return
@@ -122,14 +188,14 @@ public class Board implements Comparable {
 		}
 		return true;
 	}
-	
+
 	public String checkWhoWinns() {
 		String temp = "";
 		if (this.isBoardFull()) {
-			if (this.nbrOfTakenO>this.nbrOfTakenX) {
-				temp = "O wins," + this.nbrOfTakenO;
-			} else if (this.nbrOfTakenO<this.nbrOfTakenX) {
-				temp = "X wins," + this.nbrOfTakenX;
+			if (this.numberOfO > this.numberOfX) {
+				temp = "O wins," + this.numberOfO;
+			} else if (this.numberOfO < this.numberOfX) {
+				temp = "X wins," + this.numberOfX;
 			} else {
 				temp = "Its a draw";
 			}
@@ -140,120 +206,133 @@ public class Board implements Comparable {
 	public boolean hasPlayerValidMove(String player) {
 		for (int i = 0; i < board.length; i++) {
 			for (int j = 0; j < board.length; j++) {
-				return isValidMove(i,j,player);
+				return isValidMove(i, j, player);
 			}
 		}
 		return false;
 	}
 
-	
-	public void addMovehistory(int row,int col) {
-		this.movehistory.add(row+","+col);
+	public void addMovehistory(int row, int col) {
+		this.movehistory.add(row + "," + col);
 	}
-	
-	//Neighbor
-	private boolean isValidMove(int row,int col,String player) {
-		if(player.equals("X")) {
+
+	// Neighbor
+	private boolean isValidMove(int row, int col, String player) {
+		if (player.equals("X")) {
 			try {
-				if(this.board[row-1][col-1].equals("O")) {
+				if (this.board[row - 1][col - 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row-1][col].equals("O")) {
+				if (this.board[row - 1][col].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row-1][col+1].equals("O")) {
+				if (this.board[row - 1][col + 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row][col-1].equals("O")) {
+				if (this.board[row][col - 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row][col+1].equals("O")) {
+				if (this.board[row][col + 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col-1].equals("O")) {
+				if (this.board[row + 1][col - 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col].equals("O")) {
+				if (this.board[row + 1][col].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col+1].equals("O")) {
+				if (this.board[row + 1][col + 1].equals("O")) {
 					return true;
 				}
-			}catch(Exception e) {}
-			
-		}else if(player.equals("O")) {
+			} catch (Exception e) {
+			}
+
+		} else if (player.equals("O")) {
 			try {
-				if(this.board[row-1][col-1].equals("X")) {
+				if (this.board[row - 1][col - 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row-1][col].equals("X")) {
+				if (this.board[row - 1][col].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row-1][col+1].equals("X")) {
+				if (this.board[row - 1][col + 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row][col-1].equals("X")) {
+				if (this.board[row][col - 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row][col+1].equals("X")) {
+				if (this.board[row][col + 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col-1].equals("X")) {
+				if (this.board[row + 1][col - 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col].equals("X")) {
+				if (this.board[row + 1][col].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
+			} catch (Exception e) {
+			}
 			try {
-				if(this.board[row+1][col+1].equals("X")) {
+				if (this.board[row + 1][col + 1].equals("X")) {
 					return true;
 				}
-			}catch(Exception e) {}
-			
+			} catch (Exception e) {
+			}
+
 		}
 		return false;
-		
-	}
-	
 
-	
+	}
+
 	private void flipLeft(int row, int col, String player, int endRow, int endCol) {
 		if (player.equals("X")) {
 			try {
 				if (this.board[endRow][endCol - 1].equals("O")) {
 					flipLeft(row, col, player, endRow, endCol - 1);
 				} else if (this.board[endRow][endCol - 1].equals("X")) {
-					for (int i = endCol-1; i <= col; i++) {
+					for (int i = col; i >= endCol - 1; i--) {
 						board[row][i] = "X";
 					}
-				} else if (this.board[row][col - 1].equals(".")) {
+				} else if (this.board[endRow][endCol - 1].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
@@ -263,10 +342,10 @@ public class Board implements Comparable {
 				if (this.board[endRow][endCol - 1].equals("X")) {
 					flipLeft(row, col, player, endRow, endCol - 1);
 				} else if (this.board[endRow][endCol - 1].equals("O")) {
-					for (int i = endCol-1; i <= col; i++) {
+					for (int i = col; i >= col; i--) {
 						board[row][i] = "O";
 					}
-				} else if (this.board[row][col - 1].equals(".")) {
+				} else if (this.board[endRow][endCol - 1].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
@@ -280,10 +359,10 @@ public class Board implements Comparable {
 				if (this.board[endRow][endCol + 1].equals("O")) {
 					flipRight(row, col, player, endRow, endCol + 1);
 				} else if (this.board[endRow][endCol + 1].equals("X")) {
-					for (int i = col; i <= endCol+1; i++) {
+					for (int i = col; i <= endCol + 1; i++) {
 						board[row][i] = "X";
 					}
-				} else if (this.board[row][col + 1].equals(".")) {
+				} else if (this.board[endRow][endCol + 1].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
@@ -293,40 +372,40 @@ public class Board implements Comparable {
 				if (this.board[endRow][endCol + 1].equals("X")) {
 					flipRight(row, col, player, endRow, endCol + 1);
 				} else if (this.board[endRow][endCol + 1].equals("O")) {
-					for (int i = col; i <= endCol+1; i++) {
+					for (int i = col; i <= endCol + 1; i++) {
 						board[row][i] = "O";
 					}
-				} else if (this.board[row][col + 1].equals(".")) {
+				} else if (this.board[endRow][endCol + 1].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
 			}
 		}
 	}
-	
+
 	private void flipUp(int row, int col, String player, int endRow, int endCol) {
 		if (player.equals("X")) {
 			try {
-				if (this.board[endRow-1][endCol].equals("O")) {
-					flipUp(row, col, player, endRow-1, endCol);
-				} else if (this.board[endRow-1][endCol].equals("X")) {
-					for (int i = endRow-1; i <= row; i++) {
+				if (this.board[endRow - 1][endCol].equals("O")) {
+					flipUp(row, col, player, endRow - 1, endCol);
+				} else if (this.board[endRow - 1][endCol].equals("X")) {
+					for (int i = row; i >= endRow - 1; i--) {
 						board[i][col] = "X";
 					}
-				} else if (this.board[endRow-1][endCol].equals(".")) {
+				} else if (this.board[endRow - 1][endCol].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
 			}
 		} else if (player.equals("O")) {
 			try {
-				if (this.board[endRow-1][endCol].equals("X")) {
-					flipUp(row, col, player, endRow-1, endCol);
-				} else if (this.board[endRow-1][endCol].equals("O")) {
-					for (int i = endRow-1; i <= row; i++) {
+				if (this.board[endRow - 1][endCol].equals("X")) {
+					flipUp(row, col, player, endRow - 1, endCol);
+				} else if (this.board[endRow - 1][endCol].equals("O")) {
+					for (int i = row; i >= endRow - 1; i--) {
 						board[i][col] = "O";
 					}
-				} else if (this.board[endRow-1][endCol].equals(".")) {
+				} else if (this.board[endRow - 1][endCol].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
@@ -337,90 +416,26 @@ public class Board implements Comparable {
 	private void flipDown(int row, int col, String player, int endRow, int endCol) {
 		if (player.equals("X")) {
 			try {
-				if (this.board[endRow+1][endCol].equals("O")) {
-					flipDown(row, col, player, endRow+1, endCol);
-				} else if (this.board[endRow+1][endCol].equals("X")) {
-					for (int i = row; i <= endRow+1; i++) {
+				if (this.board[endRow + 1][endCol].equals("O")) {
+					flipDown(row, col, player, endRow + 1, endCol);
+				} else if (this.board[endRow + 1][endCol].equals("X")) {
+					for (int i = row; i <= endRow + 1; i++) {
 						board[i][col] = "X";
 					}
-				} else if (this.board[endRow+1][endCol].equals(".")) {
+				} else if (this.board[endRow + 1][endCol].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
 			}
 		} else if (player.equals("O")) {
 			try {
-				if (this.board[endRow+1][endCol].equals("X")) {
-					flipDown(row, col, player, endRow+1, endCol);
-				} else if (this.board[endRow+1][endCol].equals("O")) {
-					for (int i = row; i <= endRow+1; i++) {
+				if (this.board[endRow + 1][endCol].equals("X")) {
+					flipDown(row, col, player, endRow + 1, endCol);
+				} else if (this.board[endRow + 1][endCol].equals("O")) {
+					for (int i = row; i <= endRow + 1; i++) {
 						board[i][col] = "O";
 					}
-				} else if (this.board[endRow+1][endCol].equals(".")) {
-					return;
-				}
-			} catch (Exception e) {
-			}
-		}
-	}
-	
-	
-	private void flipUpLeft(int row, int col, String player, int endRow, int endCol) {
-		if (player.equals("X")) {
-			try {
-				if (this.board[endRow-1][endCol-1].equals("O")) {
-					flipUpLeft(row, col, player, endRow-1, endCol-1);
-				} else if (this.board[endRow-1][endCol-1].equals("X")) {
-					for (int i = row; i >= endRow-1; i--) {
-						board[i][col] = "X";
-						col--;
-					}
-				} else if (this.board[endRow-1][endCol-1].equals(".")) {
-					return;
-				}
-			} catch (Exception e) {
-			}
-		} else if (player.equals("O")) {
-			try {
-				if (this.board[endRow-1][endCol-1].equals("X")) {
-					flipUpLeft(row, col, player, endRow-1, endCol-1);
-				} else if (this.board[endRow-1][endCol-1].equals("O")) {
-					for (int i = row; i >= endRow-1; i++) {
-						board[i][col] = "O";
-						col--;
-					}
-				} else if (this.board[endRow-1][endCol-1].equals(".")) {
-					return;
-				}
-			} catch (Exception e) {
-			}
-		}
-	}
-	private void flipUpRight(int row, int col, String player, int endRow, int endCol) {
-		if (player.equals("X")) {
-			try {
-				if (this.board[endRow-1][endCol+1].equals("O")) {
-					flipUpRight(row, col, player, endRow-1, endCol+1);
-				} else if (this.board[endRow-1][endCol+1].equals("X")) {
-					for (int i = row; i >= endRow-1; i--) {
-						board[i][col] = "X";
-						col++;
-					}
-				} else if (this.board[endRow-1][endCol+1].equals(".")) {
-					return;
-				}
-			} catch (Exception e) {
-			}
-		} else if (player.equals("O")) {
-			try {
-				if (this.board[endRow-1][endCol+1].equals("X")) {
-					flipUpRight(row, col, player, endRow-1, endCol+1);
-				} else if (this.board[endRow-1][endCol+1].equals("O")) {
-					for (int i = row+1; i >= endRow-1; i--) {
-						board[i][col] = "O";
-						col++;
-					}
-				} else if (this.board[endRow-1][endCol+1].equals(".")) {
+				} else if (this.board[endRow + 1][endCol].equals(".")) {
 					return;
 				}
 			} catch (Exception e) {
@@ -428,8 +443,133 @@ public class Board implements Comparable {
 		}
 	}
 
-	
-	
+	private void flipUpLeft(int row, int col, String player, int endRow, int endCol) {
+		if (player.equals("X")) {
+			try {
+				if (this.board[endRow - 1][endCol - 1].equals("O")) {
+					flipUpLeft(row, col, player, endRow - 1, endCol - 1);
+				} else if (this.board[endRow - 1][endCol - 1].equals("X")) {
+					for (int i = row; i >= endRow - 1; i--) {
+						board[i][col] = "X";
+						col--;
+					}
+				} else if (this.board[endRow - 1][endCol - 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		} else if (player.equals("O")) {
+			try {
+				if (this.board[endRow - 1][endCol - 1].equals("X")) {
+					flipUpLeft(row, col, player, endRow - 1, endCol - 1);
+				} else if (this.board[endRow - 1][endCol - 1].equals("O")) {
+					for (int i = row; i >= endRow - 1; i--) {
+						board[i][col] = "O";
+						col--;
+					}
+				} else if (this.board[endRow - 1][endCol - 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	private void flipUpRight(int row, int col, String player, int endRow, int endCol) {
+		if (player.equals("X")) {
+			try {
+				if (this.board[endRow - 1][endCol + 1].equals("O")) {
+					flipUpRight(row, col, player, endRow - 1, endCol + 1);
+				} else if (this.board[endRow - 1][endCol + 1].equals("X")) {
+					for (int i = row; i >= endRow - 1; i--) {
+						board[i][col] = "X";
+						col++;
+					}
+				} else if (this.board[endRow - 1][endCol + 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		} else if (player.equals("O")) {
+			try {
+				if (this.board[endRow - 1][endCol + 1].equals("X")) {
+					flipUpRight(row, col, player, endRow - 1, endCol + 1);
+				} else if (this.board[endRow - 1][endCol + 1].equals("O")) {
+					for (int i = row; i >= endRow - 1; i--) {
+						board[i][col] = "O";
+						col++;
+					}
+				} else if (this.board[endRow - 1][endCol + 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	private void flipDownLeft(int row, int col, String player, int endRow, int endCol) {
+		if (player.equals("X")) {
+			try {
+				if (this.board[endRow + 1][endCol - 1].equals("O")) {
+					flipDownLeft(row, col, player, endRow + 1, endCol - 1);
+				} else if (this.board[endRow + 1][endCol - 1].equals("X")) {
+					for (int i = row; i <= endRow + 1; i++) {
+						board[i][col] = "X";
+						col--;
+					}
+				} else if (this.board[endRow + 1][endCol - 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		} else if (player.equals("O")) {
+			try {
+				if (this.board[endRow + 1][endCol - 1].equals("X")) {
+					flipDownLeft(row, col, player, endRow + 1, endCol - 1);
+				} else if (this.board[endRow + 1][endCol - 1].equals("O")) {
+					for (int i = row; i <= endRow + 1; i++) {
+						board[i][col] = "O";
+						col--;
+					}
+				} else if (this.board[endRow + 1][endCol - 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	private void flipDownRight(int row, int col, String player, int endRow, int endCol) {
+		if (player.equals("X")) {
+			try {
+				if (this.board[endRow + 1][endCol + 1].equals("O")) {
+					flipDownRight(row, col, player, endRow + 1, endCol + 1);
+				} else if (this.board[endRow + 1][endCol + 1].equals("X")) {
+					for (int i = row; i <= endRow + 1; i++) {
+						board[i][col] = "X";
+						col++;
+					}
+				} else if (this.board[endRow + 1][endCol + 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		} else if (player.equals("O")) {
+			try {
+				if (this.board[endRow + 1][endCol + 1].equals("X")) {
+					flipDownRight(row, col, player, endRow + 1, endCol + 1);
+				} else if (this.board[endRow + 1][endCol + 1].equals("O")) {
+					for (int i = row; i <= endRow + 1; i++) {
+						board[i][col] = "O";
+						col++;
+					}
+				} else if (this.board[endRow + 1][endCol + 1].equals(".")) {
+					return;
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
 
 	/**
 	 * value tested at terminal node.
@@ -440,12 +580,12 @@ public class Board implements Comparable {
 		return this.value;
 	}
 
-	public String getPlayer() {
-		return player;
+	public String getLastActivePlayer() {
+		return lastActivePlayer;
 	}
 
 	public void setPlayer(String player) {
-		this.player = player;
+		this.lastActivePlayer = player;
 	}
 
 	public String getPosition() {
@@ -481,15 +621,18 @@ public class Board implements Comparable {
 		}
 		return temp;
 	}
+
 	public LinkedList<String> getMoveHistoryCopy() {
 		LinkedList<String> temp = new LinkedList<String>();
-		for (int i = 0; i < movehistory.size(); i++) {	
-				temp.add(this.movehistory.get(i));
+		for (int i = 0; i < movehistory.size(); i++) {
+			temp.add(this.movehistory.get(i));
 		}
 		return temp;
 	}
+
 	public Board cloneThisBoardObj() {
-		return new Board(this.getBoardCopy(),this.player,this.position,this.level,this.value,this.getMoveHistoryCopy());
+		return new Board(this.getBoardCopy(), this.lastActivePlayer, this.position, this.level, this.value,
+				this.alpha,this.beta, this.getMoveHistoryCopy());
 	}
 
 	public LinkedList<String> getMovehistory() {
@@ -497,36 +640,43 @@ public class Board implements Comparable {
 	}
 
 	private String showMoveHistory() {
-		String temp="";
+		String temp = "";
 		for (int i = 0; i < this.movehistory.size(); i++) {
-			temp+=this.movehistory.get(i)+";";
+			temp += this.movehistory.get(i) + ";";
 		}
 		return temp;
 	}
-	
+
+	public void setAlpha(int alpha) {
+		this.alpha = alpha;
+	}
+
+	public void setBeta(int beta) {
+		this.beta = beta;
+	}
+
 	public String toString() {
 		String temp = "";
 		for (int i = 0; i < board.length; i++) {
-			temp+=i+"";
+			temp += i + "";
 			for (int j = 0; j < board.length; j++) {
-				
+
 				temp += "|" + board[i][j] + "|";
 			}
 			temp += "\n";
-			if(i==board.length-1) {
+			if (i == board.length - 1) {
 				for (int j = 0; j < board.length; j++) {
-					temp+="  "+j;
+					temp += "  " + j;
 				}
-				temp+="\n";
+				temp += "\n";
 			}
 		}
 		temp += "boardLevel:" + this.level + "\n";
 		temp += "boardValue:" + this.value + "\n";
-		temp += "boardPlayer:" + this.player + "\n";
-		temp += "numberOfTakenX:" + this.nbrOfTakenX + "\n";
-		temp += "numberOfTakenO:" + this.nbrOfTakenO + "\n";
-		temp += "move history:" + this.showMoveHistory() + "\n";
-		
+		temp += "boardPlayer:" + this.lastActivePlayer + "\n";
+		temp += "numberOfTakenX:" + this.numberOfX + "\n";
+		temp += "numberOfTakenO:" + this.numberOfO + "\n";
+		temp += "move history:" + this.showMoveHistory();
 
 		return temp;
 	}
@@ -541,10 +691,8 @@ public class Board implements Comparable {
 	@Override
 	public int compareTo(Object obj) {
 		Board b = (Board) obj;
-		return this.getValue()-b.getValue();
+		return this.getValue() - b.getValue();
 
 	}
-
-	
 
 }
