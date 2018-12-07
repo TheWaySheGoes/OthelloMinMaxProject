@@ -3,6 +3,11 @@ package othelloMine;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+/**
+ * Othello game working kind of.....
+ * @author Lukas Kurasinski
+ *
+ */
 public class OthelloMain {
 	private Board board = new Board();
 	private int evalDepth = 2; // must be even for evaluation of computers move
