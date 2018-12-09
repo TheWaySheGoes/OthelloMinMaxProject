@@ -3,7 +3,7 @@ package othelloMine;
 import java.util.Scanner;
 
 /**
- * Othello game working kind of.....
+ * Othello game working kind of.
  * 
  * @author Lukas Kurasinski
  *
