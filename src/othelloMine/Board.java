@@ -592,7 +592,10 @@ public class Board implements Comparable {
 	private String showMoveHistory() {
 		String temp = "";
 		for (int i = 0; i < this.movehistory.size(); i++) {
-			temp += this.movehistory.get(i) + ";";
+			if(i!=0&&i%10==0) {
+				temp+="\n              ";
+			}
+			temp += this.movehistory.get(i) + " ";
 		}
 		return temp;
 	}
@@ -613,12 +616,12 @@ public class Board implements Comparable {
 				temp += "\n";
 			}
 		}
-		temp += "boardLevel:" + this.level + "\n";
-		temp += "boardValue:" + this.value + "\n";
-		temp += "boardPlayer:" + this.lastActivePlayer + "\n";
-		temp += "numberOfTakenX:" + this.numberOfX + "\n";
-		temp += "numberOfTakenO:" + this.numberOfO + "\n";
-		temp += "move history:" + this.showMoveHistory();
+		temp += "board Level: " + this.level + "\n";
+		temp += "board Value: " + this.value + "\n";
+		temp += "last played: " + this.lastActivePlayer + "\n";
+		temp += "number of taken X: " + this.numberOfX + "\n";
+		temp += "number of taken O: " + this.numberOfO + "\n";
+		temp += "move history: " + this.showMoveHistory();
 
 		return temp;
 	}
