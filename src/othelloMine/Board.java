@@ -9,6 +9,7 @@ public class Board implements Comparable {
 			{ ".", ".", ".", ".", ".", ".", ".", "." }, { ".", ".", ".", ".", ".", ".", ".", "." } }; // = new
 																										// String[4][4];
 	
+	
 	private String lastActivePlayer = "";
 	private String position = "";
 	private int level = 0;

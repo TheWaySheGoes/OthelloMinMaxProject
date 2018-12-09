@@ -236,6 +236,7 @@ public class Driver {
 
 	}
 
+	
 	public static void main(String[] args) {
 		String preRunInfo="\n----- OTHELLO LUKAS KURASINSKI VER 1.0 ----\n"
 				+ "\n Start it with three arguments arg1 arg2 arg3 " + "\n arg1 = [ true | false ] for pruning "
